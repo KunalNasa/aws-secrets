@@ -37,6 +37,7 @@ async function fetchSecret() {
         // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
         throw error;
     }
+    console.log(response);
     const secret = response.MY_SECRET;
     console.log(secret);
     return secret;
