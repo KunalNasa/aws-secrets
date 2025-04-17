@@ -38,6 +38,7 @@ async function fetchSecret() {
         throw error;
     }
     const secret = response.MY_SECRET;
+    console.log(secret);
     return secret;
 }
 
