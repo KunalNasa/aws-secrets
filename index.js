@@ -19,7 +19,6 @@ const {
 async function fetchSecret() {
 
     const secret_name = "secret-app-secrets";
-    
     const client = new SecretsManagerClient({
         region: "ap-south-1",
     });
