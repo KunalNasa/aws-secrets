@@ -1,0 +1,43 @@
+name: Deploy this application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:  
+      - name: Checkout the code
+        uses: actions/checkout@v2
+      - name: Docker login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: kunalnasa/secret-app:${{ github.sha }}
+        
+      - name: Deploy to EC2
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
+
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@3.111.30.57 << 'EOF'
+            # Stop and remove any existing container
+            sudo docker stop secret-app || true
+            sudo docker rm secret-app || true
+
+            # Pull the latest image
+            sudo docker pull kunalnasa/secret-app:${{ github.sha }}
+
+            # Run the new container 
+            sudo docker run --name secret-app -d -p 8080:8080 kunalnasa/secret-app:${{ github.sha }}
+          EOF
