@@ -37,8 +37,9 @@ async function fetchSecret() {
         throw error;
     }
     console.log(response);
-    const secret = response.SecretString.MY_SECRET;
-    const port = response.SecretString.PORT;
+    const secretObj = JSON.parse(response.SecretString);
+    const secret = secretObj.MY_SECRET;
+    const port = secretObj.PORT;
     console.log(secret);
     return {secret, port};
 }
