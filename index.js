@@ -1,7 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
 
-const PORT = process.env.PORT || 8080;
 const app = express();
 dotenv.config();
 
@@ -38,12 +37,14 @@ async function fetchSecret() {
         throw error;
     }
     console.log(response);
-    const secret = response.MY_SECRET;
+    const secret = response.SecretString.MY_SECRET;
+    const port = response.SecretString.PORT;
     console.log(secret);
-    return secret;
+    return {secret, port};
 }
 
-const secret = fetchSecret()
+const {secret, port} = fetchSecret()
+const PORT = port || 8080;
   
 
 app.get('/', (req, res) => {
