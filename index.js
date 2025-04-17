@@ -1,62 +1,51 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} = require('@aws-sdk/client-secrets-manager');
 
-const app = express();
 dotenv.config();
 
-// Use this code snippet in your app.
-// If you need more information about configurations or implementing the sample code, visit the AWS docs:
-// https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started.html
+const app = express();
 
-const {
-    SecretsManagerClient,
-    GetSecretValueCommand,
-  } =  require("@aws-sdk/client-secrets-manager");
-  
-
-  
 async function fetchSecret() {
+  const secret_name = 'secret-app-secrets';
+  const client = new SecretsManagerClient({
+    region: 'ap-south-1',
+  });
 
-    const secret_name = "secret-app-secrets";
-    const client = new SecretsManagerClient({
-        region: "ap-south-1",
-    });
-    
-    let response;
-    
-    try {
-        response = await client.send(
-            new GetSecretValueCommand({
-                SecretId: secret_name,
-                VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
-            })
-        );
-    } catch (error) {
-        // For a list of exceptions thrown, see
-        // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-        throw error;
-    }
-    console.log(response);
+  try {
+    const response = await client.send(
+      new GetSecretValueCommand({
+        SecretId: secret_name,
+        VersionStage: 'AWSCURRENT',
+      })
+    );
+
     const secretObj = JSON.parse(response.SecretString);
     const secret = secretObj.MY_SECRET;
     const port = secretObj.PORT;
-    console.log(secret);
-    return {secret, port};
+    return { secret, port };
+  } catch (error) {
+    console.error('Error fetching secret:', error);
+    process.exit(1); // Exit app if secrets can't be loaded
+  }
 }
 
-const {secret, port} = fetchSecret()
-const PORT = port || 8080;
-  
+// Wrap server startup inside an async IIFE
+(async () => {
+  const { secret, port } = await fetchSecret();
+  const PORT = port || 8080;
 
-app.get('/', (req, res) => {
-  return res.json({
-    "name" : "Kunal",
-    "secret" : secret,
+  app.get('/', (req, res) => {
+    return res.json({
+      name: 'Kunal',
+      secret: secret,
+    });
   });
-}
-);
 
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-})
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+})();
